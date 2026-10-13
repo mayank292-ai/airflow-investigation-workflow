@@ -2,8 +2,7 @@
 
 A local CLI investigator for unfamiliar Airflow failures. The runtime uses one
 LangChain `create_agent` agent, an OpenAI model, bounded evidence tools, and
-LangGraph SQLite checkpoints. Codex helps develop the code; it is not the runtime
-investigator. No frontend or hosting is required.
+LangGraph SQLite checkpoints.
 
 ## Source repository and local demo data
 
@@ -56,12 +55,6 @@ previous$5 approval and all spending entries remain preserved. Do not reset the
 ledger to replay a demo. This ledger includes retry allowance and is not a
 provider invoice.
 
-The user confirmed Docker Desktop 4.95.0 / Linux engine 29.8.2. This Codex executor
-can reach local Airflow REST, but cannot launch the relocated Docker CLI or
-connect to OpenAI (Windows socket error 10013). Run provider/container commands
-in regular PowerShell. The recorded authentication mount startup defect is fixed
-and real corrected service startup passed.
-
 A live v5 isolated ingestion patch is generated and locally validated. It has
 not been deployed and does not clean historical duplicates.
 
@@ -79,10 +72,8 @@ The startup script requires at least 2 GB available on Windows and approximately
 4 GB available to the Docker Linux engine. It does not close apps or change BIOS,
 Windows features, Docker settings, or credentials.
 
-Open a **regular Windows PowerShell window outside Codex**, then run:
-
 ```powershell
-cd 'C:\Users\mayank\Documents\Codex\2026-10-12\github-plugin-github-openai-curated-remote\outputs\airflow-investigation-workflow'
+cd 'C:\Users\mayank\Documents\2026-10-12\github-plugin-github-openai-curated-remote\outputs\airflow-investigation-workflow'
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\airflow.ps1 -Action Start
 ```
 
