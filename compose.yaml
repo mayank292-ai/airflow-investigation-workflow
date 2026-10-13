@@ -1,0 +1,83 @@
+name: airflow-investigation-workflow
+x-airflow: &airflow
+  image: apache/airflow:3.3.1-python3.12
+  user: "${AIRFLOW_UID:-50000}:0"
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__PARALLELISM: "2"
+    AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: "2"
+    AIRFLOW__API__WORKERS: "1"
+    AIRFLOW__DAG_PROCESSOR__PARSING_PROCESSES: "1"
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "airflow:admin"
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/simple-auth-passwords.json
+    AIRFLOW__API_AUTH__JWT_SECRET: local-synthetic-demo-signing-key
+    AIRFLOW__API__SECRET_KEY: local-synthetic-demo-signing-key
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://api:8080/execution/
+    AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "5"
+    AIRFLOW__DAG_PROCESSOR__MIN_FILE_PROCESS_INTERVAL: "5"
+    PYTHONPATH: /opt/airflow/deployment/source:/opt/airflow/runtime
+  volumes:
+    - ./deployment/dags:/opt/airflow/dags:ro
+    - ./deployment:/opt/airflow/deployment:ro
+    - ./deployment/passwords.json:/opt/airflow/simple-auth-passwords.json:rw
+    - ./demo/runtime:/opt/airflow/runtime:ro
+    - ./state:/evidence
+    - ./private:/private
+    - ./logs:/opt/airflow/logs
+  depends_on:
+    postgres:
+      condition: service_healthy
+services:
+  postgres:
+    image: postgres:16.10
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - metadata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    mem_limit: 256m
+  init:
+    <<: *airflow
+    command: db migrate
+    profiles: [setup]
+    mem_limit: 768m
+  api:
+    <<: *airflow
+    command: api-server
+    ports: ["127.0.0.1:8080:8080"]
+    mem_limit: 1024m
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+  scheduler:
+    <<: *airflow
+    command: scheduler
+    mem_limit: 1536m
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob", "--local"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+  dag-processor:
+    <<: *airflow
+    command: dag-processor
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "DagProcessorJob", "--local"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+volumes:
+  metadata:

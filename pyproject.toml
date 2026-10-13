@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "airflow-investigation-workflow"
+version = "0.1.0"
+description = "Local, evidence-bounded Airflow investigations with LangChain"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "langchain==1.4.4", "langchain-openai>=1.6.3,<2",
+  "langgraph>=1.0,<2", "langgraph-checkpoint-sqlite==3.1.1",
+  "pydantic>=2.11,<3", "httpx>=0.28,<1", "typer>=0.20,<1",
+  "python-dotenv>=1.1,<2", "filelock>=3.20,<4"
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.4,<10", "pytest-timeout>=2.4,<3", "pip-tools>=7.5,<8"]
+
+[project.scripts]
+afi = "afi.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/afi"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+timeout = 30
+markers = ["integration: requires running Airflow", "live: requires model access"]

@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS output (
+  business_key TEXT NOT NULL, value TEXT, page INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS checkpoint (
+  singleton INTEGER PRIMARY KEY CHECK(singleton=1), page INTEGER NOT NULL
+);
+INSERT OR IGNORE INTO checkpoint VALUES (1,0);
